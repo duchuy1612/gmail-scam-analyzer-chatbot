@@ -1,34 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { User, CreateUserData, UserResponse } from '../entities/user.entity';
+import { UserService } from './user.service';
+import { CreateUserData, UserResponse } from '../entities/user.entity';
 
 @Injectable()
 export class AuthService {
-  private users: User[] = []; // In-memory storage for demo
   private readonly jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+
+  constructor(private userService: UserService) {}
 
   async register(userData: CreateUserData): Promise<{ user: UserResponse; token: string }> {
     // Check if user already exists
-    const existingUser = this.users.find(user => user.email === userData.email);
+    const existingUser = await this.userService.findByEmail(userData.email);
     if (existingUser) {
       throw new Error('Email already registered');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-
     // Create user
-    const user: User = {
-      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      email: userData.email,
-      name: userData.name,
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.users.push(user);
+    const user = await this.userService.createUser(userData);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -37,24 +26,18 @@ export class AuthService {
       { expiresIn: '24h' }
     );
 
-    const userResponse: UserResponse = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-    };
-
-    return { user: userResponse, token };
+    return { user, token };
   }
 
   async login(email: string, password: string): Promise<{ user: UserResponse; token: string }> {
     // Find user
-    const user = this.users.find(u => u.email === email);
+    const user = await this.userService.findByEmail(email);
     if (!user) {
       throw new Error('Invalid email or password');
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await this.userService.validatePassword(password, user.password);
     if (!isPasswordValid) {
       throw new Error('Invalid email or password');
     }
@@ -78,17 +61,9 @@ export class AuthService {
   async validateToken(token: string): Promise<UserResponse | null> {
     try {
       const decoded = jwt.verify(token, this.jwtSecret) as { sub: string; email: string };
-      const user = this.users.find(u => u.id === decoded.sub);
+      const user = await this.userService.findById(decoded.sub);
       
-      if (!user) {
-        return null;
-      }
-
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      };
+      return user;
     } catch {
       return null;
     }
@@ -97,7 +72,7 @@ export class AuthService {
   async refreshToken(oldToken: string): Promise<{ token: string; expiresAt: string }> {
     try {
       const decoded = jwt.verify(oldToken, this.jwtSecret) as { sub: string; email: string };
-      const user = this.users.find(u => u.id === decoded.sub);
+      const user = await this.userService.findById(decoded.sub);
       
       if (!user) {
         throw new Error('Invalid token');

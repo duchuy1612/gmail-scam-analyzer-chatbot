@@ -1,14 +1,55 @@
-version: '3'
+version: '3.8'
 services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: gmail_scam_analyzer
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+
   frontend:
-    build: ../frontend
+    build:
+      context: ../frontend
+      dockerfile: ../infrastructure/dockerfiles/frontend.Dockerfile
     ports:
       - "3000:3000"
+    depends_on:
+      - backend
+
   backend:
-    build: ../backend
+    build:
+      context: ../backend
+      dockerfile: ../infrastructure/dockerfiles/backend.Dockerfile
     ports:
       - "3001:3001"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: appuser
+      DB_PASSWORD: apppassword
+      DB_DATABASE: gmail_scam_analyzer
+      JWT_SECRET: your-jwt-secret-key
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   ai_service:
-    build: ../ai_service
+    build:
+      context: ../ai_service
+      dockerfile: ../infrastructure/dockerfiles/ai_service.Dockerfile
     ports:
       - "8000:8000"
+
+volumes:
+  mysql_data:

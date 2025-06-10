@@ -1,11 +1,17 @@
 import { Controller, Get, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
+import { UserService } from './services/user.service';
+import { EmailAnalysisService } from './services/email-analysis.service';
 
 @ApiTags('health')
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly userService: UserService,
+    private readonly emailAnalysisService: EmailAnalysisService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -81,5 +87,28 @@ export class AppController {
         cache: 'connected' // TODO: Check cache connection
       }
     };
+  }
+
+  @Get('test-db')
+  async testDatabase() {
+    try {
+      const userCount = await this.userService.getAllUsers();
+      const stats = await this.emailAnalysisService.getAnalysisStats();
+      
+      return {
+        message: 'Database connection successful!',
+        data: {
+          totalUsers: userCount.length,
+          analysisStats: stats,
+          timestamp: new Date().toISOString(),
+        }
+      };
+    } catch (error) {
+      return {
+        message: 'Database connection failed',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
   }
 }

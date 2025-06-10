@@ -13,9 +13,13 @@ exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const app_service_1 = require("./app.service");
+const user_service_1 = require("./services/user.service");
+const email_analysis_service_1 = require("./services/email-analysis.service");
 let AppController = class AppController {
-    constructor(appService) {
+    constructor(appService, userService, emailAnalysisService) {
         this.appService = appService;
+        this.userService = userService;
+        this.emailAnalysisService = emailAnalysisService;
     }
     getHello() {
         return {
@@ -36,6 +40,27 @@ let AppController = class AppController {
                 cache: 'connected'
             }
         };
+    }
+    async testDatabase() {
+        try {
+            const userCount = await this.userService.getAllUsers();
+            const stats = await this.emailAnalysisService.getAnalysisStats();
+            return {
+                message: 'Database connection successful!',
+                data: {
+                    totalUsers: userCount.length,
+                    analysisStats: stats,
+                    timestamp: new Date().toISOString(),
+                }
+            };
+        }
+        catch (error) {
+            return {
+                message: 'Database connection failed',
+                error: error.message,
+                timestamp: new Date().toISOString(),
+            };
+        }
     }
 };
 exports.AppController = AppController;
@@ -103,9 +128,17 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Object)
 ], AppController.prototype, "getDetailedHealth", null);
+__decorate([
+    (0, common_1.Get)('test-db'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AppController.prototype, "testDatabase", null);
 exports.AppController = AppController = __decorate([
     (0, swagger_1.ApiTags)('health'),
     (0, common_1.Controller)(),
-    __metadata("design:paramtypes", [app_service_1.AppService])
+    __metadata("design:paramtypes", [app_service_1.AppService,
+        user_service_1.UserService,
+        email_analysis_service_1.EmailAnalysisService])
 ], AppController);
 //# sourceMappingURL=app.controller.js.map

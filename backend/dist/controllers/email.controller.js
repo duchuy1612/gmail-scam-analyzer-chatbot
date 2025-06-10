@@ -17,15 +17,48 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const email_analysis_dto_1 = require("../dto/email-analysis.dto");
 const ai_service_1 = require("../services/ai.service");
+const email_analysis_service_1 = require("../services/email-analysis.service");
+const auth_guard_1 = require("../guards/auth.guard");
 let EmailController = class EmailController {
-    constructor(aiService) {
+    constructor(aiService, emailAnalysisService) {
         this.aiService = aiService;
+        this.emailAnalysisService = emailAnalysisService;
     }
-    async analyzeEmail(analyzeEmailDto) {
-        return await this.aiService.analyzeEmail(analyzeEmailDto);
+    async analyzeEmail(analyzeEmailDto, req) {
+        const analysisResult = await this.aiService.analyzeEmail(analyzeEmailDto);
+        await this.emailAnalysisService.createAnalysis({
+            userId: req.user.id,
+            emailContent: analyzeEmailDto.body,
+            emailSubject: analyzeEmailDto.subject,
+            emailSender: analyzeEmailDto.sender,
+            analysisResult: analysisResult,
+            riskScore: analysisResult.scamProbability,
+            isScam: analysisResult.scamProbability > 0.5,
+        });
+        return analysisResult;
     }
-    async bulkAnalyzeEmails(emails) {
-        return await this.aiService.bulkAnalyzeEmails(emails);
+    async getAnalysisHistory(req) {
+        return await this.emailAnalysisService.getAnalysesByUserId(req.user.id);
+    }
+    async getAnalysisStats(req) {
+        return await this.emailAnalysisService.getAnalysisStats(req.user.id);
+    }
+    async getAnalysis(id) {
+        return await this.emailAnalysisService.getAnalysisById(id);
+    }
+    async bulkAnalyzeEmails(emails, req) {
+        const results = await this.aiService.bulkAnalyzeEmails(emails);
+        const promises = results.map((result, index) => this.emailAnalysisService.createAnalysis({
+            userId: req.user.id,
+            emailContent: emails[index].body,
+            emailSubject: emails[index].subject,
+            emailSender: emails[index].sender,
+            analysisResult: result,
+            riskScore: result.scamProbability,
+            isScam: result.scamProbability > 0.5,
+        }));
+        await Promise.all(promises);
+        return results;
     }
 };
 exports.EmailController = EmailController;
@@ -70,10 +103,56 @@ __decorate([
         }
     }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [email_analysis_dto_1.AnalyzeEmailDto]),
+    __metadata("design:paramtypes", [email_analysis_dto_1.AnalyzeEmailDto, Object]),
     __metadata("design:returntype", Promise)
 ], EmailController.prototype, "analyzeEmail", null);
+__decorate([
+    (0, common_1.Get)('history'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get email analysis history',
+        description: 'Retrieves the email analysis history for the authenticated user'
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Analysis history retrieved successfully'
+    }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], EmailController.prototype, "getAnalysisHistory", null);
+__decorate([
+    (0, common_1.Get)('stats'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get email analysis statistics',
+        description: 'Retrieves analysis statistics for the authenticated user'
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Statistics retrieved successfully'
+    }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], EmailController.prototype, "getAnalysisStats", null);
+__decorate([
+    (0, common_1.Get)('analysis/:id'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get specific email analysis',
+        description: 'Retrieves a specific email analysis by ID'
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Analysis retrieved successfully'
+    }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], EmailController.prototype, "getAnalysis", null);
 __decorate([
     (0, common_1.Post)('bulk-analyze'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
@@ -95,13 +174,17 @@ __decorate([
         description: 'Invalid email data in request'
     }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Array]),
+    __metadata("design:paramtypes", [Array, Object]),
     __metadata("design:returntype", Promise)
 ], EmailController.prototype, "bulkAnalyzeEmails", null);
 exports.EmailController = EmailController = __decorate([
     (0, swagger_1.ApiTags)('emails'),
     (0, common_1.Controller)('emails'),
-    __metadata("design:paramtypes", [ai_service_1.AiService])
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __metadata("design:paramtypes", [ai_service_1.AiService,
+        email_analysis_service_1.EmailAnalysisService])
 ], EmailController);
 //# sourceMappingURL=email.controller.js.map
