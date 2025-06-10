@@ -1,0 +1,14 @@
+version: '3'
+services:
+  frontend:
+    build: ../frontend
+    ports:
+      - "3000:3000"
+  backend:
+    build: ../backend
+    ports:
+      - "3001:3001"
+  ai_service:
+    build: ../ai_service
+    ports:
+      - "8000:8000"
