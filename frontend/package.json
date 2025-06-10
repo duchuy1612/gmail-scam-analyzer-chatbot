@@ -8,11 +8,16 @@
     "start": "next start"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.21",
     "next": "latest",
+    "postcss": "^8.5.4",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "tailwindcss": "^4.1.8"
   },
   "devDependencies": {
+    "@types/node": "24.0.0",
+    "@types/react": "19.1.7",
     "typescript": "^5.0.0"
   }
 }
