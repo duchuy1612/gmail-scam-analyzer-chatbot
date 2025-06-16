@@ -111,7 +111,15 @@ def bulk_analyze_emails(request: BulkEmailRequest):
         texts = [f"{email.subject}\n{email.body}" for email in request.emails]
         probabilities = model.predict_proba(texts)[:, 1]
         results = []
+try:
+        texts = [f"{email.subject}
+{email.body}" for email in request.emails]
+        probabilities = model.predict_proba(texts)[:, 1]
+        
+        # TODO: Implement asynchronous processing or batching for improved performance
+        results = []
         for email_data, prob in zip(request.emails, probabilities):
+            scam_probability = float(prob)
             scam_probability = float(prob)
             risk_level = determine_risk_level(scam_probability)
             explanation = generate_explanation(email_data, scam_probability)
