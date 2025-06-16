@@ -99,7 +99,19 @@ async saveTokens(userId: string, tokens: Auth.Credentials): Promise<void> {
     if (!record) {
       record = this.gmailTokenRepo.create({
         userId,
-        accessToken: tokens.access_token!,
+if (!record) {
+      record = this.gmailTokenRepo.create({
+        userId,
+        accessToken: tokens.access_token ?? '',
+        refreshToken: tokens.refresh_token ?? '',
+        expiryDate,
+      });
+    } else {
+      record.accessToken = tokens.access_token ?? '';
+      record.refreshToken = tokens.refresh_token ?? '';
+      record.expiryDate = expiryDate;
+    }
+    await this.gmailTokenRepo.save(record);
         refreshToken: tokens.refresh_token!,
         expiryDate,
       });
