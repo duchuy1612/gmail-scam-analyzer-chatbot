@@ -229,7 +229,42 @@ class ApiClient {
 
   setRefreshToken(token: string): void {
     this.refresh = token;
+}
+
+  // Token management
+  private setLocalStorageItem(key: string, value: string): void {
     if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  }
+
+  private removeLocalStorageItem(key: string): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  }
+
+  setToken(token: string): void {
+    this.token = token;
+    this.setLocalStorageItem('authToken', token);
+  }
+
+  setRefreshToken(token: string): void {
+    this.refresh = token;
+    this.setLocalStorageItem('refreshToken', token);
+  }
+
+  clearToken(): void {
+    this.token = null;
+    this.removeLocalStorageItem('authToken');
+  }
+
+  clearRefreshToken(): void {
+    this.refresh = null;
+    this.removeLocalStorageItem('refreshToken');
+  }
+
+  getToken(): string | null {
 // Import CryptoJS for encryption
 // CryptoJS is used to encrypt sensitive data before storing it in localStorage
 import CryptoJS from 'crypto-js';
