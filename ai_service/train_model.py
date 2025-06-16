@@ -69,7 +69,55 @@ if __name__ == "__main__":
         data['text'], data['label'], test_size=0.2, random_state=42
     )
 
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+import joblib
+from sklearn.model_selection import GridSearchCV  # import GridSearchCV for hyperparameter tuning
+
+
+def main(args):
+    data = pd.read_csv(args.data_path)
+    if not {'text', 'label'}.issubset(data.columns):
+        raise ValueError("Dataset must contain 'text' and 'label' columns")
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        data['text'], data['label'], test_size=0.2, random_state=42
+    )
+
     pipeline = Pipeline([
+        ('tfidf', TfidfVectorizer()),
+        ('clf', LogisticRegression())
+    ])
+
+    param_grid = {
+        'tfidf__max_features': [1000, 5000, 10000],
+        'tfidf__stop_words': [None, 'english'],
+        'clf__C': [0.1, 1, 10],
+        'clf__max_iter': [1000, 2000, 3000]
+    }
+
+    grid_search = GridSearchCV(pipeline, param_grid, cv=5, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+
+    best_pipeline = grid_search.best_estimator_
+    preds = best_pipeline.predict(X_test)
+    print(classification_report(y_test, preds))
+    print(f"Best parameters: {grid_search.best_params_}")
+
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(best_pipeline, output_path)
+    print(f"Model saved to {output_path}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train phishing detection model")
+    parser.add_argument(
+        "--data-path",
         ('tfidf', TfidfVectorizer(stop_words='english')),
         ('clf', LogisticRegression(max_iter=1000))
     ])
