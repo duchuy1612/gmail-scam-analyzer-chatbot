@@ -198,7 +198,17 @@ class ApiClient {
   setRefreshToken(token: string): void {
     this.refresh = token;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('refreshToken', token);
+// Import CryptoJS for encryption
+// CryptoJS is used to encrypt sensitive data before storing it in localStorage
+import CryptoJS from 'crypto-js';
+
+  setRefreshToken(token: string): void {
+    this.refresh = token;
+    if (typeof window !== 'undefined') {
+      const encryptedToken = CryptoJS.AES.encrypt(token, process.env.ENCRYPTION_KEY).toString();
+      localStorage.setItem('refreshToken', encryptedToken);
+    }
+  }
     }
   }
 
