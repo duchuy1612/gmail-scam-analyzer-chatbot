@@ -93,7 +93,19 @@ class ApiClient {
       }
 
       return response.json();
-    } catch (error: any) {
+if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new APIError(errorData.message || `HTTP error! status: ${response.status}`, response.status);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new NetworkError('Network error occurred');
+    }
+  }
       if (error instanceof Error) {
         throw error;
       }
