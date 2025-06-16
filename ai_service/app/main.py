@@ -163,7 +163,47 @@ def bulk_analyze_emails(request: BulkEmailRequest):
         texts = [f"{email.subject}\n{email.body}" for email in request.emails]
         probabilities = model.predict_proba(texts)[:, 1]
         results = []
-        for email_data, prob in zip(request.emails, probabilities):
+raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.post("/bulk-analyze-emails", response_model=List[EmailAnalysisResult])
+async def bulk_analyze_emails(request: BulkEmailRequest):
+    """
+    Analyze multiple emails for scam indicators
+    """
+    try:
+        texts = [f"{email.subject}
+{email.body}" for email in request.emails]
+        probabilities = await asyncio.to_thread(model.predict_proba, texts)
+        probabilities = probabilities[:, 1]
+        
+        results = await asyncio.gather(*[
+            asyncio.to_thread(
+                process_email,
+                email_data,
+                float(prob)
+            ) for email_data, prob in zip(request.emails, probabilities)
+        ])
+        
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bulk analysis failed: {str(e)}")
+
+# Chat endpoint
+@app.post("/chat", response_model=ChatResponse)
+
+# TODO: Implement process_email function
+# def process_email(email_data: EmailData, scam_probability: float) -> EmailAnalysisResult:
+#     risk_level = determine_risk_level(scam_probability)
+#     explanation = generate_explanation(email_data, scam_probability)
+#     red_flags = identify_red_flags(email_data)
+#     confidence = scam_probability
+#     return EmailAnalysisResult(
+#         scam_probability=scam_probability,
+#         risk_level=risk_level,
+#         explanation=explanation,
+#         red_flags=red_flags,
+#         confidence=confidence
+#     )
             scam_probability = float(prob)
             risk_level = determine_risk_level(scam_probability)
             explanation = generate_explanation(email_data, scam_probability)
