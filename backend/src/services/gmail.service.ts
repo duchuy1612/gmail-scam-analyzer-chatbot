@@ -74,7 +74,27 @@ async getOAuthClient(userId: string): Promise<OAuth2Client> {
   }
 
   async handleOAuthCallback(userId: string, code: string): Promise<Auth.Credentials> {
-    let record = await this.gmailTokenRepo.findOne({ where: { userId } });
+// Import the sanitize-html package for input sanitization
+// import sanitizeHtml from 'sanitize-html';
+
+async saveTokens(userId: string, tokens: Auth.Credentials): Promise<void> {
+  const sanitizedUserId = sanitizeHtml(userId);
+  let record = await this.gmailTokenRepo.findOne({ where: { userId: sanitizedUserId } });
+  const expiryDate = tokens.expiry_date ?? 0;
+  if (!record) {
+    record = this.gmailTokenRepo.create({
+      userId: sanitizedUserId,
+      accessToken: tokens.access_token!,
+      refreshToken: tokens.refresh_token!,
+      expiryDate,
+    });
+  } else {
+    record.accessToken = tokens.access_token!;
+    record.refreshToken = tokens.refresh_token!;
+    record.expiryDate = expiryDate;
+  }
+  await this.gmailTokenRepo.save(record);
+}
     const expiryDate = tokens.expiry_date ?? 0;
     if (!record) {
       record = this.gmailTokenRepo.create({
