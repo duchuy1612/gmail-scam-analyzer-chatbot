@@ -1,7 +1,8 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, BadRequestException, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, BadRequestException, UnauthorizedException, ConflictException, UseGuards, Get, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { LoginDto, RegisterDto, AuthResponseDto } from '../dto/auth.dto';
 import { AuthService } from '../services/auth.service';
+import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -49,10 +50,11 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     try {
-      const { user, token } = await this.authService.login(loginDto.email, loginDto.password);
-      
+      const { user, token, refreshToken } = await this.authService.login(loginDto.email, loginDto.password);
+
       return {
         accessToken: token,
+        refreshToken,
         user,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
       };
@@ -102,14 +104,15 @@ export class AuthController {
   })
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
     try {
-      const { user, token } = await this.authService.register({
+      const { user, token, refreshToken } = await this.authService.register({
         email: registerDto.email,
         password: registerDto.password,
         name: registerDto.name,
       });
-      
+
       return {
         accessToken: token,
+        refreshToken,
         user,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
       };
@@ -127,14 +130,24 @@ export class AuthController {
     summary: 'Refresh JWT token',
     description: 'Get a new access token using a valid refresh token'
   })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        refreshToken: { type: 'string' }
+      },
+      required: ['refreshToken']
+    }
+  })
   @ApiResponse({
     status: 200,
     description: 'Token refreshed successfully',
     schema: {
       type: 'object',
       properties: {
-        accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-        expiresAt: { type: 'string', example: '2025-06-11T14:30:00Z' }
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' },
+        expiresAt: { type: 'string' }
       }
     }
   })
@@ -142,12 +155,28 @@ export class AuthController {
     status: 401,
     description: 'Invalid or expired refresh token'
   })
-  async refreshToken(): Promise<{ accessToken: string; expiresAt: string }> {
-    // TODO: Implement token refresh logic with proper request body
-    // For now, returning a new token
-    return {
-      accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new_token_payload.new_signature',
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    };
+  async refreshToken(@Body('refreshToken') refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: string }> {
+    try {
+      const { token, refreshToken: newRefresh, expiresAt } = await this.authService.refreshToken(refreshToken);
+      return { accessToken: token, refreshToken: newRefresh, expiresAt };
+const { token, refreshToken: newRefresh, expiresAt } = await this.authService.refreshToken(refreshToken);
+      return { accessToken: token, refreshToken: newRefresh, expiresAt };
+    } catch (error) {
+      // Log the error details for debugging
+      console.error('Error refreshing token:', error);
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+  }
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Current user', description: 'Get info for authenticated user' })
+  @ApiResponse({ status: 200 })
+  async getMe(@Request() req) {
+    return req.user;
   }
 }

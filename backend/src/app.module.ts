@@ -16,6 +16,7 @@ import { User } from './entities/user.entity';
 import { EmailAnalysis } from './entities/email-analysis.entity';
 import { ChatSession } from './entities/chat-session.entity';
 import { ChatMessage } from './entities/chat-message.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { ChatMessage } from './entities/chat-message.entity';
       isGlobal: true,
     }),
     TypeOrmModule.forRoot(databaseConfig),
-    TypeOrmModule.forFeature([User, EmailAnalysis, ChatSession, ChatMessage]),
+    TypeOrmModule.forFeature([User, EmailAnalysis, ChatSession, ChatMessage, RefreshToken]),
   ],
   controllers: [
     AppController,

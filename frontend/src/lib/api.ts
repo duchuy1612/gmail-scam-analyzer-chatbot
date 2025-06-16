@@ -9,6 +9,7 @@ export interface User {
 
 export interface AuthResponse {
   accessToken: string;
+  refreshToken: string;
   user: User;
   expiresAt: string;
 }
@@ -45,6 +46,7 @@ class ApiClient {
   private backendURL: string;
   private aiServiceURL: string;
   private token: string | null = null;
+  private refresh: string | null = null;
 
   constructor(backendURL: string, aiServiceURL: string) {
     this.backendURL = backendURL;
@@ -53,6 +55,7 @@ class ApiClient {
     // Initialize token from localStorage if available
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('authToken');
+      this.refresh = localStorage.getItem('refreshToken');
     }
   }
 
@@ -84,11 +87,25 @@ class ApiClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        const err: any = new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+
+      return response.json();
+if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new APIError(errorData.message || `HTTP error! status: ${response.status}`, response.status);
       }
 
       return response.json();
     } catch (error) {
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new NetworkError('Network error occurred');
+    }
+  }
       if (error instanceof Error) {
         throw error;
       }
@@ -102,8 +119,25 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    
-    this.setToken(response.accessToken);
+
+}
+      throw new Error('Network error occurred');
+    }
+  }
+
+  private setAuthTokens(accessToken: string, refreshToken: string): void {
+    this.setToken(accessToken);
+    this.setRefreshToken(refreshToken);
+  }
+
+  // Auth methods
+  async login(email: string, password: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    this.setAuthTokens(response.accessToken, response.refreshToken);
     return response;
   }
 
@@ -112,17 +146,48 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     });
-    
-    this.setToken(response.accessToken);
+
+    this.setAuthTokens(response.accessToken, response.refreshToken);
     return response;
   }
 
-  async refreshToken(): Promise<{ accessToken: string; expiresAt: string }> {
-    const response = await this.request<{ accessToken: string; expiresAt: string }>('/auth/refresh', {
+  async refreshToken(): Promise<{ accessToken: string; refreshToken: string; expiresAt: string }> {
+    const response = await this.request<{ accessToken: string; refreshToken: string; expiresAt: string }>('/auth/refresh', {
+    this.setRefreshToken(response.refreshToken);
+    return response;
+  }
+
+  async register(email: string, password: string, name: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/auth/register', {
       method: 'POST',
+      body: JSON.stringify({ email, password, name }),
     });
-    
+
     this.setToken(response.accessToken);
+    this.setRefreshToken(response.refreshToken);
+    return response;
+  }
+
+  async refreshToken(): Promise<{ accessToken: string; refreshToken: string; expiresAt: string }> {
+    const response = await this.request<{ accessToken: string; refreshToken: string; expiresAt: string }>('/auth/refresh', {
+      method: 'POST',
+return response;
+  }
+
+  async refreshToken(): Promise<{ accessToken: string; refreshToken: string; expiresAt: string }> {
+    if (!this.refresh) {
+      throw new Error('No refresh token available');
+    }
+    const response = await this.request<{ accessToken: string; refreshToken: string; expiresAt: string }>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken: this.refresh }),
+    });
+    });
+
+    this.setToken(response.accessToken);
+    if (response.refreshToken) {
+      this.setRefreshToken(response.refreshToken);
+    }
     return response;
   }
 
@@ -172,11 +237,67 @@ class ApiClient {
     return this.request<{ message: string; status: string }>('/', {}, true);
   }
 
+  async getCurrentUser(): Promise<User> {
+    return this.request<User>('/auth/me');
+  }
+
   // Token management
   setToken(token: string): void {
     this.token = token;
     if (typeof window !== 'undefined') {
       localStorage.setItem('authToken', token);
+    }
+  }
+
+  setRefreshToken(token: string): void {
+    this.refresh = token;
+}
+
+  // Token management
+  private setLocalStorageItem(key: string, value: string): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  }
+
+  private removeLocalStorageItem(key: string): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  }
+
+  setToken(token: string): void {
+    this.token = token;
+    this.setLocalStorageItem('authToken', token);
+  }
+
+  setRefreshToken(token: string): void {
+    this.refresh = token;
+    this.setLocalStorageItem('refreshToken', token);
+  }
+
+  clearToken(): void {
+    this.token = null;
+    this.removeLocalStorageItem('authToken');
+  }
+
+  clearRefreshToken(): void {
+    this.refresh = null;
+    this.removeLocalStorageItem('refreshToken');
+  }
+
+  getToken(): string | null {
+// Import CryptoJS for encryption
+// CryptoJS is used to encrypt sensitive data before storing it in localStorage
+import CryptoJS from 'crypto-js';
+
+  setRefreshToken(token: string): void {
+    this.refresh = token;
+    if (typeof window !== 'undefined') {
+      const encryptedToken = CryptoJS.AES.encrypt(token, process.env.ENCRYPTION_KEY).toString();
+      localStorage.setItem('refreshToken', encryptedToken);
+    }
+  }
     }
   }
 
@@ -187,8 +308,19 @@ class ApiClient {
     }
   }
 
+  clearRefreshToken(): void {
+    this.refresh = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('refreshToken');
+    }
+  }
+
   getToken(): string | null {
     return this.token;
+  }
+
+  getRefreshToken(): string | null {
+    return this.refresh;
   }
 
   isAuthenticated(): boolean {
