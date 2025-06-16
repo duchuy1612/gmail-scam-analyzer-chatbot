@@ -33,7 +33,32 @@ export class GmailService {
     return client;
   }
 
+}
+
   async saveTokens(userId: string, tokens: Auth.Credentials): Promise<void> {
+    try {
+      let record = await this.gmailTokenRepo.findOne({ where: { userId } });
+      const expiryDate = tokens.expiry_date ?? 0;
+      if (!record) {
+        record = this.gmailTokenRepo.create({
+          userId,
+          accessToken: tokens.access_token!,
+          refreshToken: tokens.refresh_token!,
+          expiryDate,
+        });
+      } else {
+        record.accessToken = tokens.access_token!;
+        record.refreshToken = tokens.refresh_token!;
+        record.expiryDate = expiryDate;
+      }
+      await this.gmailTokenRepo.save(record);
+    } catch (error) {
+      console.error('Error saving tokens:', error);
+      throw new Error('Failed to save tokens');
+    }
+  }
+
+  async handleOAuthCallback(userId: string, code: string): Promise<Auth.Credentials> {
     let record = await this.gmailTokenRepo.findOne({ where: { userId } });
     const expiryDate = tokens.expiry_date ?? 0;
     if (!record) {
