@@ -9,11 +9,11 @@ export class RefreshToken {
   @Column({ name: 'user_id' })
   userId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ unique: true })
   token: string;
 
   @Column({ name: 'expires_at' })
