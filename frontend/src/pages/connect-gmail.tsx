@@ -5,41 +5,21 @@ import { apiClient } from '../lib/api';
 export default function ConnectGmail() {
   const router = useRouter();
 
-export default function ConnectGmail() {
-  const router = useRouter();
-
-  const initiateOAuthFlow = () => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
-        redirect_uri: `${window.location.origin}/connect-gmail`,
-        response_type: 'code',
-        access_type: 'offline',
-        scope: 'https://www.googleapis.com/auth/gmail.readonly',
-      });
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-    }
-  };
-
-  const handleGmailCode = async (code: string) => {
-    try {
-      await apiClient.exchangeGmailCode(code);
-      await apiClient.importGmailEmails();
-    } finally {
-      router.replace('/dashboard');
-    }
-  };
-
   useEffect(() => {
     const { code } = router.query;
-    if (!code) {
-      initiateOAuthFlow();
-    } else if (typeof code === 'string') {
-      handleGmailCode(code);
-    }
-  }, [router]);
-    const { code } = router.query;
-    if (!code) {
+
+    if (typeof code === 'string') {
+      const handleGmailCode = async () => {
+        try {
+          await apiClient.exchangeGmailCode(code);
+          await apiClient.importGmailEmails();
+        } finally {
+          router.replace('/dashboard');
+        }
+      };
+
+      handleGmailCode();
+    } else {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams({
           client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
@@ -50,15 +30,6 @@ export default function ConnectGmail() {
         });
         window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
       }
-    } else if (typeof code === 'string') {
-      (async () => {
-        try {
-          await apiClient.exchangeGmailCode(code);
-          await apiClient.importGmailEmails();
-        } finally {
-          router.replace('/dashboard');
-        }
-      })();
     }
   }, [router]);
 
