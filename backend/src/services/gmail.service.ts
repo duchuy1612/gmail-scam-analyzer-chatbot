@@ -22,7 +22,22 @@ export class GmailService {
 
   async getOAuthClient(userId: string): Promise<OAuth2Client> {
     const client = this.createClient();
-    const token = await this.gmailTokenRepo.findOne({ where: { userId } });
+async getOAuthClient(userId: string): Promise<OAuth2Client> {
+    const client = this.createClient();
+    // Import and use a validation library like 'validator'
+    // validator.isUUID() checks if the input is a valid UUID
+    if (validator.isUUID(userId)) {
+      const token = await this.gmailTokenRepo.findOne({ where: { userId } });
+      if (token) {
+        client.setCredentials({
+          access_token: token.accessToken,
+          refresh_token: token.refreshToken,
+          expiry_date: token.expiryDate,
+        });
+      }
+    }
+    return client;
+  }
     if (token) {
       client.setCredentials({
         access_token: token.accessToken,
