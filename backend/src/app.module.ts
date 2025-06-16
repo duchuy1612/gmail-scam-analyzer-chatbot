@@ -19,6 +19,8 @@ import { EmailAnalysis } from './entities/email-analysis.entity';
 import { ChatSession } from './entities/chat-session.entity';
 import { ChatMessage } from './entities/chat-message.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { GmailMessage } from './entities/gmail-message.entity';
+import { GmailService } from './services/gmail.service';
 
 @Module({
   imports: [
@@ -26,7 +28,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
       isGlobal: true,
     }),
     TypeOrmModule.forRoot(databaseConfig),
-    TypeOrmModule.forFeature([User, EmailAnalysis, ChatSession, ChatMessage, RefreshToken]),
+    TypeOrmModule.forFeature([User, EmailAnalysis, ChatSession, ChatMessage, RefreshToken, GmailMessage]),
   ],
   controllers: [
     AppController,

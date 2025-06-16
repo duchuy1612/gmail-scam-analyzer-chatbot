@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nes
 import { AnalyzeEmailDto, EmailAnalysisResultDto } from '../dto/email-analysis.dto';
 import { AiService } from '../services/ai.service';
 import { EmailAnalysisService } from '../services/email-analysis.service';
+import { GmailService } from '../services/gmail.service';
 import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('emails')
@@ -13,6 +14,7 @@ export class EmailController {
   constructor(
     private readonly aiService: AiService,
     private readonly emailAnalysisService: EmailAnalysisService,
+    private readonly gmailService: GmailService,
   ) {}
   
   @Post('analyze')
@@ -146,7 +148,17 @@ export class EmailController {
     );
     
     await Promise.all(promises);
-    
+
     return results;
+  }
+
+  @Post('import-gmail')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Import recent Gmail messages' })
+  @ApiBody({ schema: { type: 'object', properties: { accessToken: { type: 'string' } }, required: ['accessToken'] } })
+  @ApiResponse({ status: 200, description: 'Messages imported successfully' })
+  async importGmail(@Body('accessToken') accessToken: string, @Request() req) {
+    const imported = await this.gmailService.importRecentEmails(req.user.id, accessToken);
+    return { imported: imported.length };
   }
 }
