@@ -35,7 +35,12 @@ import logging  # Import logging module for error handling
 
 from .model_utils import load_model
 
-model = None
+from .model_utils import load_model
+
+model = None  # TODO: Consider lazy loading or initialization in startup event
+
+app = FastAPI(
+    title="Gmail Scam Analyzer AI Service",
 
 app = FastAPI(
     title="Gmail Scam Analyzer AI Service",
