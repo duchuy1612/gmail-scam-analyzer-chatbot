@@ -13,8 +13,10 @@ export default function ConnectGmail() {
         try {
           await apiClient.exchangeGmailCode(code);
           await apiClient.importGmailEmails();
-        } finally {
           router.replace('/dashboard');
+        } catch (err) {
+          console.error('Gmail connection failed', err);
+          // TODO: surface a toast / error state instead of silent redirect
         }
       };
 
