@@ -66,6 +66,7 @@ JWT_SECRET=your-jwt-secret-key
 GOOGLE_CLIENT_ID=<your_google_client_id>
 GOOGLE_CLIENT_SECRET=<your_google_client_secret>
 GOOGLE_REDIRECT_URI=http://localhost:3001/oauth2callback
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=<your_google_client_id>
 ```
 
 ### Gmail API Setup
