@@ -108,7 +108,39 @@ class ApiClient {
       body: JSON.stringify({ email, password }),
     });
 
-    this.setToken(response.accessToken);
+}
+      throw new Error('Network error occurred');
+    }
+  }
+
+  private setAuthTokens(accessToken: string, refreshToken: string): void {
+    this.setToken(accessToken);
+    this.setRefreshToken(refreshToken);
+  }
+
+  // Auth methods
+  async login(email: string, password: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    this.setAuthTokens(response.accessToken, response.refreshToken);
+    return response;
+  }
+
+  async register(email: string, password: string, name: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    });
+
+    this.setAuthTokens(response.accessToken, response.refreshToken);
+    return response;
+  }
+
+  async refreshToken(): Promise<{ accessToken: string; refreshToken: string; expiresAt: string }> {
+    const response = await this.request<{ accessToken: string; refreshToken: string; expiresAt: string }>('/auth/refresh', {
     this.setRefreshToken(response.refreshToken);
     return response;
   }
