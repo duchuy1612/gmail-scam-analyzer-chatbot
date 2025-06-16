@@ -28,8 +28,14 @@ This project consists of three main components:
    cd ../backend && npm install
    
    # Install AI service dependencies
+
    cd ../ai_service && pip install -r requirements.txt
    ```
+
+   > **Note**: Run `npm ci` inside the `backend/` directory before executing
+   > `npm run build` or any backend tests. This ensures dependencies exactly
+   > match the lock file. If the Nest CLI isn't available globally, use
+   > `npx nest build` in your scripts.
 
 2. **Start all services:**
    ```bash
