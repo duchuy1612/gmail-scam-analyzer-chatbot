@@ -214,3 +214,28 @@ Complete API documentation is available at:
 - **AI Service**: http://localhost:8000/docs
 
 Both services provide interactive Swagger UI for testing endpoints directly from the browser.
+
+## 📈 Model Training & Inference
+
+The AI service relies on a logistic regression classifier trained on a labeled phishing dataset.
+
+1. Prepare a CSV file containing two columns:
+   - `text` – the email content (subject and body combined)
+   - `label` – `1` for phishing emails and `0` for legitimate emails
+
+2. Train the model:
+
+   ```bash
+   cd ai_service
+   python train_model.py --data-path path/to/your_dataset.csv --output app/model.joblib
+   ```
+
+   The script prints evaluation metrics and saves `model.joblib` inside `ai_service/app/`.
+
+3. Start the AI service. The model is loaded automatically at startup:
+
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+Ensure the `model.joblib` file remains in the `ai_service/app/` directory so `main.py` can load it for predictions.
