@@ -39,7 +39,55 @@ async validateRefreshToken(token: string): Promise<RefreshToken | null> {
     return refresh;
   }
 
+async validateRefreshToken(token: string): Promise<RefreshToken | null> {
+    const refresh = await this.refreshTokenRepo.findOne({ where: { token } });
+    if (!refresh || refresh.expiresAt < new Date()) {
+      return null;
+    }
+    return refresh;
+  }
+
+  private async generateAuthTokens(user: UserResponse): Promise<{ token: string; refreshToken: string }> {
+    const token = jwt.sign(
+      { sub: user.id, email: user.email },
+      this.jwtSecret,
+      { expiresIn: '24h' }
+    );
+    const refresh = await this.generateRefreshToken(user.id);
+    return { token, refreshToken: refresh.token };
+  }
+
   async register(userData: CreateUserData): Promise<{ user: UserResponse; token: string; refreshToken: string }> {
+    // Check if user already exists
+    const existingUser = await this.userService.findByEmail(userData.email);
+    if (existingUser) {
+      throw new Error('Email already registered');
+    }
+
+    // Create user
+    const user = await this.userService.createUser(userData);
+
+    // Generate tokens
+    const { token, refreshToken } = await this.generateAuthTokens(user);
+
+    return { user, token, refreshToken };
+  }
+
+  async login(email: string, password: string): Promise<{ user: UserResponse; token: string; refreshToken: string }> {
+    // Find user
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      throw new Error('Invalid email or password');
+    }
+
+    // Verify password
+    const isPasswordValid = await this.userService.validatePassword(password, user.password);
+    if (!isPasswordValid) {
+      throw new Error('Invalid email or password');
+    }
+
+    // Generate tokens
+    const { token, refreshToken } = await this.generateAuthTokens(user);
     // Check if user already exists
     const existingUser = await this.userService.findByEmail(userData.email);
     if (existingUser) {
