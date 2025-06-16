@@ -42,7 +42,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const me = await apiClient.getCurrentUser();
         setUser(me);
-      } catch (err: any) {
+try {
+        const me = await apiClient.getCurrentUser();
+        setUser(me);
+      } catch (err: Error) {
+        if (err instanceof Error && 'status' in err && err.status === 401 && refresh) {
+          try {
+            await apiClient.refreshToken();
+            const me = await apiClient.getCurrentUser();
         if (err.status === 401 && refresh) {
           try {
             await apiClient.refreshToken();
