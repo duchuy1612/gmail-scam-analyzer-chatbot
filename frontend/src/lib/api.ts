@@ -159,7 +159,17 @@ class ApiClient {
   async refreshToken(): Promise<{ accessToken: string; refreshToken: string; expiresAt: string }> {
     const response = await this.request<{ accessToken: string; refreshToken: string; expiresAt: string }>('/auth/refresh', {
       method: 'POST',
+return response;
+  }
+
+  async refreshToken(): Promise<{ accessToken: string; refreshToken: string; expiresAt: string }> {
+    if (!this.refresh) {
+      throw new Error('No refresh token available');
+    }
+    const response = await this.request<{ accessToken: string; refreshToken: string; expiresAt: string }>('/auth/refresh', {
+      method: 'POST',
       body: JSON.stringify({ refreshToken: this.refresh }),
+    });
     });
 
     this.setToken(response.accessToken);
