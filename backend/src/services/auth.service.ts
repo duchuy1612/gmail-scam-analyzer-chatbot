@@ -25,7 +25,14 @@ export class AuthService {
   }
 
   async validateRefreshToken(token: string): Promise<RefreshToken | null> {
-    const refresh = await this.refreshTokenRepo.findOne({ where: { token } });
+async validateRefreshToken(token: string): Promise<RefreshToken | null> {
+    // Import and use a sanitization library like validator
+    // validator.escape sanitizes the input to prevent NoSQL injection
+    const sanitizedToken = validator.escape(token);
+    const refresh = await this.refreshTokenRepo.findOne({ where: { token: sanitizedToken } });
+    if (!refresh || refresh.expiresAt < new Date()) {
+      return null;
+    }
     if (!refresh || refresh.expiresAt < new Date()) {
       return null;
     }
