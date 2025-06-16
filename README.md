@@ -79,7 +79,7 @@ This project consists of three main components:
 - **Swagger Docs**: http://localhost:3001/api/docs
 - **Email Analysis**: POST /emails/analyze
 - **Chat Messages**: POST /chat/message
-- **Authentication**: POST /auth/login, /auth/register
+- **Authentication**: POST /auth/login, /auth/register, /auth/refresh, GET /auth/me
 
 ### AI Service (Port 8000)
 - **Health Check**: http://localhost:8000/health
@@ -87,6 +87,8 @@ This project consists of three main components:
 - **Email Analysis**: POST /analyze-email
 - **Bulk Analysis**: POST /bulk-analyze-emails
 - **Chat AI**: POST /chat
+
+Refresh tokens allow the frontend to obtain new JWTs without requiring the user to log in again. Use `/auth/refresh` with the stored `refreshToken` and call `/auth/me` to validate credentials on startup.
 
 ## 🔧 API Integration
 
@@ -178,15 +180,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000  # Production
 3. **Chat with AI**: Use the "AI Chat" tab to ask security questions
 4. **Check System Health**: Use the "System Health" tab to monitor services
 5. **View API Docs**: Access Swagger documentation for both backend and AI service
-
-## 🚀 Next Steps
-
-- Implement user authentication and session management
-- Add email import from Gmail API
-- Enhance ML models with real phishing datasets  
-- Add email reputation checking
-- Implement user feedback and model training
-- Add notification systems for high-risk emails
 
 ## 📄 API Documentation
 

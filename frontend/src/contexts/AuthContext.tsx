@@ -32,19 +32,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = apiClient.getToken();
-    if (token) {
-      // TODO: Validate token with backend and get user info
-      // For now, we'll just assume the token is valid
-      // In a real app, you'd make a request to validate the token
-      setUser({
-        id: 'user_123',
-        email: 'user@example.com',
-        name: 'Demo User'
-      });
-    }
-    setIsLoading(false);
+    const init = async () => {
+      const token = apiClient.getToken();
+      const refresh = apiClient.getRefreshToken();
+      if (!token && !refresh) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const me = await apiClient.getCurrentUser();
+        setUser(me);
+      } catch (err: any) {
+        if (err.status === 401 && refresh) {
+          try {
+            await apiClient.refreshToken();
+            const me = await apiClient.getCurrentUser();
+            setUser(me);
+          } catch {
+            apiClient.clearToken();
+            apiClient.clearRefreshToken();
+            setUser(null);
+          }
+        } else {
+          apiClient.clearToken();
+          apiClient.clearRefreshToken();
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
@@ -79,6 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = (): void => {
     apiClient.clearToken();
+    apiClient.clearRefreshToken();
     setUser(null);
     setError(null);
   };

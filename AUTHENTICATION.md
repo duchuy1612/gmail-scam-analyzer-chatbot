@@ -73,7 +73,13 @@ Authenticate an existing user.
 ```
 
 ### POST /auth/refresh
-Refresh an access token (placeholder - requires implementation).
+Exchange a refresh token for a new JWT. Send a JSON body like:
+```json
+{
+  "refreshToken": "<refresh_token>"
+}
+```
+The response includes a new `accessToken`, an updated `refreshToken`, and an `expiresAt` timestamp.
 
 ## Frontend Pages
 
