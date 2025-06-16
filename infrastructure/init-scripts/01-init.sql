@@ -52,6 +52,15 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     INDEX idx_created_at (created_at)
 );
 
+-- Create gmail_tokens table for storing OAuth credentials
+CREATE TABLE IF NOT EXISTS gmail_tokens (
+    user_id VARCHAR(36) PRIMARY KEY,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    expiry_date BIGINT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Insert mock users (passwords are hashed for 'password123')
 INSERT INTO users (id, email, name, password) VALUES 
 ('550e8400-e29b-41d4-a716-446655440001', 'john.doe@example.com', 'John Doe', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeANh0pnEP1Hc8Oz6'),
