@@ -48,6 +48,25 @@ This project consists of three main components:
    ./test-services.sh
    ```
 
+### Environment Variables
+Create a `.env` file inside the `backend` folder with at least the following values:
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=appuser
+DB_PASSWORD=apppassword
+DB_DATABASE=gmail_scam_analyzer
+JWT_SECRET=your-jwt-secret-key
+GOOGLE_CLIENT_ID=<your_google_client_id>
+GOOGLE_CLIENT_SECRET=<your_google_client_secret>
+GOOGLE_REDIRECT_URI=http://localhost:3001/oauth2callback
+```
+
+### Gmail API Setup
+1. Enable the Gmail API in your Google Cloud project.
+2. Create OAuth credentials and copy the client ID, secret and redirect URI into the `.env` file above.
+3. When calling `/emails/import-gmail`, provide an OAuth access token for the authenticated Gmail user.
+
 ## 📱 Application Features
 
 ### 🛡️ Email Analysis
