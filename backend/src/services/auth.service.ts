@@ -119,7 +119,14 @@ async validateRefreshToken(token: string): Promise<RefreshToken | null> {
       { expiresIn: '24h' }
     );
 
-    await this.refreshTokenRepo.delete({ id: existing.id });
+{ expiresIn: '24h' }
+    );
+
+    // Use a typed parameter to ensure type safety and prevent NoSQL injection
+    await this.refreshTokenRepo.delete({ id: existing.id as string });
+    const newRefresh = await this.generateRefreshToken(user.id);
+
+    return {
     const newRefresh = await this.generateRefreshToken(user.id);
 
     return {
