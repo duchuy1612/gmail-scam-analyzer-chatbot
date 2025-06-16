@@ -1,126 +1,132 @@
 import { Injectable } from '@nestjs/common';
-import { google } from 'googleapis';
+import { google, Auth } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { GmailMessage } from '../entities/gmail-message.entity';
-import { gmailConfig } from '../config/gmail.config';
+import { GmailToken } from '../entities/gmail-token.entity';
 
 @Injectable()
 export class GmailService {
+  private createClient(): OAuth2Client {
+    return new google.auth.OAuth2(
+      process.env.GMAIL_CLIENT_ID,
+      process.env.GMAIL_CLIENT_SECRET,
+      process.env.GMAIL_REDIRECT_URI,
+    );
+  }
+
   constructor(
-    @InjectRepository(GmailMessage)
-    private gmailRepo: Repository<GmailMessage>,
+    @InjectRepository(GmailToken)
+    private gmailTokenRepo: Repository<GmailToken>,
   ) {}
 
-  private createOAuthClient(accessToken: string) {
-    const client = new google.auth.OAuth2(
-      gmailConfig.clientId,
-      gmailConfig.clientSecret,
-      gmailConfig.redirectUri,
-    );
-    client.setCredentials({ access_token: accessToken });
+  async getOAuthClient(userId: string): Promise<OAuth2Client> {
+    const client = this.createClient();
+async getOAuthClient(userId: string): Promise<OAuth2Client> {
+    const client = this.createClient();
+    // Import and use a validation library like 'validator'
+    // validator.isUUID() checks if the input is a valid UUID
+    if (validator.isUUID(userId)) {
+      const token = await this.gmailTokenRepo.findOne({ where: { userId } });
+      if (token) {
+        client.setCredentials({
+          access_token: token.accessToken,
+          refresh_token: token.refreshToken,
+          expiry_date: token.expiryDate,
+        });
+      }
+    }
+    return client;
+  }
+    if (token) {
+      client.setCredentials({
+        access_token: token.accessToken,
+        refresh_token: token.refreshToken,
+        expiry_date: token.expiryDate,
+      });
+    }
     return client;
   }
 
-  async importRecentEmails(userId: string, accessToken: string): Promise<GmailMessage[]> {
-    const auth = this.createOAuthClient(accessToken);
-    const gmail = google.gmail({ version: 'v1', auth });
-
-async importRecentEmails(userId: string, accessToken: string): Promise<GmailMessage[]> {
-    const auth = this.createOAuthClient(accessToken);
-    const gmail = google.gmail({ version: 'v1', auth });
-    const messages: GmailMessage[] = [];
-
-    try {
-      const listRes = await gmail.users.messages.list({ userId: 'me', maxResults: 10 });
-
-      for (const m of listRes.data.messages || []) {
-        try {
-          const msgRes = await gmail.users.messages.get({ userId: 'me', id: m.id!, format: 'full' });
-          const payload = msgRes.data.payload;
-          let subject = '';
-          let from = '';
-          if (payload?.headers) {
-            for (const h of payload.headers) {
-              const name = h.name?.toLowerCase();
-              if (name === 'subject') subject = h.value || '';
-              if (name === 'from') from = h.value || '';
-            }
-          }
-          let body = '';
-          if (payload?.parts) {
-            const part = payload.parts.find(p => p.mimeType === 'text/plain');
-            const data = part?.body?.data;
-            if (data) body = Buffer.from(data, 'base64').toString('utf8');
-          } else if (payload?.body?.data) {
-            body = Buffer.from(payload.body.data, 'base64').toString('utf8');
-          }
-
-          const entity = this.gmailRepo.create({
-            userId,
-            gmailId: msgRes.data.id!,
-            threadId: msgRes.data.threadId!,
-            subject,
-            sender: from,
-            snippet: msgRes.data.snippet || '',
-            body,
-            importedAt: new Date(),
-          });
-          const saved = await this.gmailRepo.save(entity);
-          messages.push(saved);
-        } catch (error) {
-          console.error(`Error processing message ${m.id}: ${error.message}`);
-        }
-      }
-    } catch (error) {
-      console.error(`Error fetching messages: ${error.message}`);
-    }
-
-    return messages;
-    const messages: GmailMessage[] = [];
-
-    for (const m of listRes.data.messages || []) {
-      const msgRes = await gmail.users.messages.get({ userId: 'me', id: m.id!, format: 'full' });
-      const payload = msgRes.data.payload;
-      let subject = '';
-      let from = '';
-      if (payload?.headers) {
-        for (const h of payload.headers) {
-          const name = h.name?.toLowerCase();
-          if (name === 'subject') subject = h.value || '';
-          if (name === 'from') from = h.value || '';
-        }
-      }
-      let body = '';
-      if (payload?.parts) {
 }
-      let body = '';
-      if (payload?.parts) {
-        // Use type assertion to ensure 'mimeType' property exists
-        const part = payload.parts.find((p): p is { mimeType: string } => 'mimeType' in p && p.mimeType === 'text/plain');
-        const data = part?.body?.data;
-        if (data) body = Buffer.from(data, 'base64').toString('utf8');
-      } else if (payload?.body?.data) {
-        const data = part?.body?.data;
-        if (data) body = Buffer.from(data, 'base64').toString('utf8');
-      } else if (payload?.body?.data) {
-        body = Buffer.from(payload.body.data, 'base64').toString('utf8');
+
+  async saveTokens(userId: string, tokens: Auth.Credentials): Promise<void> {
+    try {
+      let record = await this.gmailTokenRepo.findOne({ where: { userId } });
+      const expiryDate = tokens.expiry_date ?? 0;
+      if (!record) {
+        record = this.gmailTokenRepo.create({
+          userId,
+          accessToken: tokens.access_token!,
+          refreshToken: tokens.refresh_token!,
+          expiryDate,
+        });
+      } else {
+        record.accessToken = tokens.access_token!;
+        record.refreshToken = tokens.refresh_token!;
+        record.expiryDate = expiryDate;
       }
-
-      const entity = this.gmailRepo.create({
-        userId,
-        gmailId: msgRes.data.id!,
-        threadId: msgRes.data.threadId!,
-        subject,
-        sender: from,
-        snippet: msgRes.data.snippet || '',
-        body,
-        importedAt: new Date(),
-      });
-      const saved = await this.gmailRepo.save(entity);
-      messages.push(saved);
+      await this.gmailTokenRepo.save(record);
+    } catch (error) {
+      console.error('Error saving tokens:', error);
+      throw new Error('Failed to save tokens');
     }
+  }
 
-    return messages;
+  async handleOAuthCallback(userId: string, code: string): Promise<Auth.Credentials> {
+// Import the sanitize-html package for input sanitization
+// import sanitizeHtml from 'sanitize-html';
+
+async saveTokens(userId: string, tokens: Auth.Credentials): Promise<void> {
+  const sanitizedUserId = sanitizeHtml(userId);
+  let record = await this.gmailTokenRepo.findOne({ where: { userId: sanitizedUserId } });
+  const expiryDate = tokens.expiry_date ?? 0;
+  if (!record) {
+    record = this.gmailTokenRepo.create({
+      userId: sanitizedUserId,
+      accessToken: tokens.access_token!,
+      refreshToken: tokens.refresh_token!,
+      expiryDate,
+    });
+  } else {
+    record.accessToken = tokens.access_token!;
+    record.refreshToken = tokens.refresh_token!;
+    record.expiryDate = expiryDate;
+  }
+  await this.gmailTokenRepo.save(record);
+}
+    const expiryDate = tokens.expiry_date ?? 0;
+    if (!record) {
+      record = this.gmailTokenRepo.create({
+        userId,
+if (!record) {
+      record = this.gmailTokenRepo.create({
+        userId,
+        accessToken: tokens.access_token ?? '',
+        refreshToken: tokens.refresh_token ?? '',
+        expiryDate,
+      });
+    } else {
+      record.accessToken = tokens.access_token ?? '';
+      record.refreshToken = tokens.refresh_token ?? '';
+      record.expiryDate = expiryDate;
+    }
+    await this.gmailTokenRepo.save(record);
+        refreshToken: tokens.refresh_token!,
+        expiryDate,
+      });
+    } else {
+      record.accessToken = tokens.access_token; // Ensure this is handled if null/undefined
+      record.refreshToken = tokens.refresh_token; // Ensure this is handled if null/undefined. Consider only updating if a new one is provided.
+      record.expiryDate = expiryDate;
+    }
+    await this.gmailTokenRepo.save(record);
+  }
+
+  async handleOAuthCallback(userId: string, code: string): Promise<Auth.Credentials> {
+    const client = this.createClient();
+    const { tokens } = await client.getToken(code);
+    await this.saveTokens(userId, tokens);
+    return tokens;
   }
 }

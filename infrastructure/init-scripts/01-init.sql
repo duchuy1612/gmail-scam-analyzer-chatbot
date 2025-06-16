@@ -52,6 +52,13 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     INDEX idx_created_at (created_at)
 );
 
+-- Create gmail_tokens table for storing OAuth credentials
+CREATE TABLE IF NOT EXISTS gmail_tokens (
+    user_id VARCHAR(36) PRIMARY KEY,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    expiry_date BIGINT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 -- Create gmail_messages table
 CREATE TABLE IF NOT EXISTS gmail_messages (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),

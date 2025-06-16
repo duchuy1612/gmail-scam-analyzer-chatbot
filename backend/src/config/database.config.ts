@@ -4,6 +4,7 @@ import { EmailAnalysis } from '../entities/email-analysis.entity';
 import { ChatSession } from '../entities/chat-session.entity';
 import { ChatMessage } from '../entities/chat-message.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
+import { GmailToken } from '../entities/gmail-token.entity';
 import { GmailMessage } from '../entities/gmail-message.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
