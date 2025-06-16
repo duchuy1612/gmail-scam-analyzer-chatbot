@@ -21,7 +21,15 @@ app = FastAPI(
 @app.on_event("startup")
 async def load_classifier():
     """Load the phishing detection model on startup."""
-    global model
+# Import session management library
+import flask_login  # Flask-Login provides user session management for Flask
+
+async def load_classifier():
+    """Load the phishing detection model on startup."""
+    if flask_login.current_user.is_authenticated and flask_login.current_user.has_role('admin'):
+        model = load_model()
+    else:
+        raise PermissionError("Unauthorized access to load classifier")
     model = load_model()
 
 # Data Models
