@@ -124,7 +124,44 @@ if __name__ == "__main__":
 
     pipeline.fit(X_train, y_train)
     preds = pipeline.predict(X_test)
-    print(classification_report(y_test, preds))
+import joblib
+import logging  # Import logging module for proper logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def main(args):
+    data = pd.read_csv(args.data_path)
+    if not {'text', 'label'}.issubset(data.columns):
+        raise ValueError("Dataset must contain 'text' and 'label' columns")
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        data['text'], data['label'], test_size=0.2, random_state=42
+    )
+
+    pipeline = Pipeline([
+        ('tfidf', TfidfVectorizer(stop_words='english')),
+        ('clf', LogisticRegression(max_iter=1000))
+    ])
+
+    pipeline.fit(X_train, y_train)
+    preds = pipeline.predict(X_test)
+    logging.info(f"Classification Report:
+{classification_report(y_test, preds)}")
+
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(pipeline, output_path)
+    logging.info(f"Model saved to {output_path}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train phishing detection model")
+    parser.add_argument(
+        "--data-path",
+        default="phishing_dataset.csv",
+        help="CSV file with columns 'text' and 'label' (1=phishing, 0=legit)"
+    )
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
