@@ -78,7 +78,15 @@ def analyze_email(email_data: EmailData):
     Analyze a single email for scam indicators using AI
     """
     try:
-        text = f"{email_data.subject}\n{email_data.body}"
+Analyze a single email for scam indicators using AI
+    """
+    try:
+        email_content = f"{email_data.subject}
+{email_data.body}"
+        scam_probability = float(model.predict_proba([email_content])[0][1])
+        risk_level = determine_risk_level(scam_probability)
+        explanation = generate_explanation(email_data, scam_probability)
+        red_flags = identify_red_flags(email_data)
 """
     try:
         text = f"{email_data.subject}
