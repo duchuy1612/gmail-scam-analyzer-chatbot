@@ -79,7 +79,14 @@ def analyze_email(email_data: EmailData):
     """
     try:
         text = f"{email_data.subject}\n{email_data.body}"
+"""
+    try:
+        text = f"{email_data.subject}
+{email_data.body}"
+        # TODO: Implement batch prediction or more efficient prediction method
         scam_probability = float(model.predict_proba([text])[0][1])
+        risk_level = determine_risk_level(scam_probability)
+        explanation = generate_explanation(email_data, scam_probability)
         risk_level = determine_risk_level(scam_probability)
         explanation = generate_explanation(email_data, scam_probability)
         red_flags = identify_red_flags(email_data)
