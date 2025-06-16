@@ -159,14 +159,9 @@ export class AuthController {
     try {
       const { token, refreshToken: newRefresh, expiresAt } = await this.authService.refreshToken(refreshToken);
       return { accessToken: token, refreshToken: newRefresh, expiresAt };
-const { token, refreshToken: newRefresh, expiresAt } = await this.authService.refreshToken(refreshToken);
-      return { accessToken: token, refreshToken: newRefresh, expiresAt };
     } catch (error) {
       // Log the error details for debugging
       console.error('Error refreshing token:', error);
-      throw new UnauthorizedException('Invalid or expired refresh token');
-    }
-  }
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }

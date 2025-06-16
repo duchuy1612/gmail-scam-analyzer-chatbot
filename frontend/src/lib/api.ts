@@ -220,6 +220,13 @@ return response;
     });
   }
 
+  async importGmail(accessToken: string): Promise<{ imported: number }> {
+    return this.request<{ imported: number }>('/emails/import-gmail', {
+      method: 'POST',
+      body: JSON.stringify({ accessToken }),
+    });
+  }
+
   // Chat methods
   async sendChatMessage(message: string, sessionId?: string, context?: string[]): Promise<ChatResponse> {
     return this.request<ChatResponse>('/chat/message', {
@@ -321,6 +328,17 @@ import CryptoJS from 'crypto-js';
 
   getRefreshToken(): string | null {
     return this.refresh;
+  }
+
+  async exchangeGmailCode(code: string): Promise<void> {
+    await this.request('/gmail/oauth', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  async importGmailEmails(): Promise<any> {
+    return this.request('/gmail/import', { method: 'POST' });
   }
 
   isAuthenticated(): boolean {

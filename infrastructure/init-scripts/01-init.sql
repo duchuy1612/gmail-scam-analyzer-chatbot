@@ -59,6 +59,20 @@ CREATE TABLE IF NOT EXISTS gmail_tokens (
     refresh_token TEXT NOT NULL,
     expiry_date BIGINT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+-- Create gmail_messages table
+CREATE TABLE IF NOT EXISTS gmail_messages (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    gmail_id VARCHAR(255) NOT NULL,
+    thread_id VARCHAR(255) NOT NULL,
+    subject VARCHAR(500),
+    sender VARCHAR(255),
+    snippet VARCHAR(1000),
+    body TEXT,
+    imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_gmail_user_id (user_id),
+    INDEX idx_imported_at (imported_at)
 );
 
 -- Insert mock users (passwords are hashed for 'password123')
