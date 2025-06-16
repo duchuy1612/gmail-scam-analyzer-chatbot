@@ -30,7 +30,40 @@ async def load_classifier():
         model = load_model()
     else:
         raise PermissionError("Unauthorized access to load classifier")
-    model = load_model()
+from datetime import datetime
+import logging  # Import logging module for error handling
+
+from .model_utils import load_model
+
+model = None
+
+app = FastAPI(
+    title="Gmail Scam Analyzer AI Service",
+    description="AI-powered email scam detection and chat assistant service",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+
+@app.on_event("startup")
+async def load_classifier():
+    """Load the phishing detection model on startup."""
+    global model
+    try:
+        model = load_model()
+    except Exception as e:
+        logging.error(f"Failed to load model: {str(e)}")
+        raise
+
+# Data Models
+class EmailData(BaseModel):
+    subject: str
+    body: str
+    sender: str
+    recipient: str
+    headers: Optional[List[str]] = []
+    urls: Optional[List[str]] = []
 
 # Data Models
 class EmailData(BaseModel):
