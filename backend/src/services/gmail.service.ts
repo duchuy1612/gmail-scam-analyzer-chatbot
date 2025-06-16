@@ -116,8 +116,8 @@ if (!record) {
         expiryDate,
       });
     } else {
-      record.accessToken = tokens.access_token!;
-      record.refreshToken = tokens.refresh_token!;
+      record.accessToken = tokens.access_token; // Ensure this is handled if null/undefined
+      record.refreshToken = tokens.refresh_token; // Ensure this is handled if null/undefined. Consider only updating if a new one is provided.
       record.expiryDate = expiryDate;
     }
     await this.gmailTokenRepo.save(record);
