@@ -5,6 +5,10 @@ import random
 import time
 from datetime import datetime
 
+from .model_utils import load_model
+
+model = load_model()
+
 app = FastAPI(
     title="Gmail Scam Analyzer AI Service",
     description="AI-powered email scam detection and chat assistant service",
@@ -74,12 +78,27 @@ def analyze_email(email_data: EmailData):
     Analyze a single email for scam indicators using AI
     """
     try:
-        # Mock AI analysis logic - replace with actual ML model
-        scam_probability = calculate_scam_probability(email_data)
+Analyze a single email for scam indicators using AI
+    """
+    try:
+        email_content = f"{email_data.subject}
+{email_data.body}"
+        scam_probability = float(model.predict_proba([email_content])[0][1])
         risk_level = determine_risk_level(scam_probability)
         explanation = generate_explanation(email_data, scam_probability)
         red_flags = identify_red_flags(email_data)
-        confidence = calculate_confidence(email_data)
+"""
+    try:
+        text = f"{email_data.subject}
+{email_data.body}"
+        # TODO: Implement batch prediction or more efficient prediction method
+        scam_probability = float(model.predict_proba([text])[0][1])
+        risk_level = determine_risk_level(scam_probability)
+        explanation = generate_explanation(email_data, scam_probability)
+        risk_level = determine_risk_level(scam_probability)
+        explanation = generate_explanation(email_data, scam_probability)
+        red_flags = identify_red_flags(email_data)
+        confidence = scam_probability
         
         return EmailAnalysisResult(
             scam_probability=scam_probability,
@@ -97,10 +116,32 @@ def bulk_analyze_emails(request: BulkEmailRequest):
     Analyze multiple emails for scam indicators
     """
     try:
+        texts = [f"{email.subject}\n{email.body}" for email in request.emails]
+        probabilities = model.predict_proba(texts)[:, 1]
         results = []
-        for email_data in request.emails:
-            result = analyze_email(email_data)
-            results.append(result)
+try:
+        texts = [f"{email.subject}
+{email.body}" for email in request.emails]
+        probabilities = model.predict_proba(texts)[:, 1]
+        
+        # TODO: Implement asynchronous processing or batching for improved performance
+        results = []
+        for email_data, prob in zip(request.emails, probabilities):
+            scam_probability = float(prob)
+            scam_probability = float(prob)
+            risk_level = determine_risk_level(scam_probability)
+            explanation = generate_explanation(email_data, scam_probability)
+            red_flags = identify_red_flags(email_data)
+            confidence = scam_probability
+            results.append(
+                EmailAnalysisResult(
+                    scam_probability=scam_probability,
+                    risk_level=risk_level,
+                    explanation=explanation,
+                    red_flags=red_flags,
+                    confidence=confidence,
+                )
+            )
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bulk analysis failed: {str(e)}")
