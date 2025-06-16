@@ -93,7 +93,14 @@ async importRecentEmails(userId: string, accessToken: string): Promise<GmailMess
       }
       let body = '';
       if (payload?.parts) {
-        const part = payload.parts.find(p => p.mimeType === 'text/plain');
+}
+      let body = '';
+      if (payload?.parts) {
+        // Use type assertion to ensure 'mimeType' property exists
+        const part = payload.parts.find((p): p is { mimeType: string } => 'mimeType' in p && p.mimeType === 'text/plain');
+        const data = part?.body?.data;
+        if (data) body = Buffer.from(data, 'base64').toString('utf8');
+      } else if (payload?.body?.data) {
         const data = part?.body?.data;
         if (data) body = Buffer.from(data, 'base64').toString('utf8');
       } else if (payload?.body?.data) {
