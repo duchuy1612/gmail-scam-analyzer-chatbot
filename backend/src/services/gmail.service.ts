@@ -3,7 +3,16 @@ import { google, gmail_v1 } from 'googleapis';
 
 @Injectable()
 export class GmailService {
-  private oauth2Client: any;
+import { Injectable } from '@nestjs/common';
+import { google, gmail_v1 } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library'; // Import OAuth2Client type
+
+@Injectable()
+export class GmailService {
+  private oauth2Client: OAuth2Client;
+
+  constructor() {
+    const clientId = process.env.GMAIL_CLIENT_ID || '';
 
   constructor() {
     const clientId = process.env.GMAIL_CLIENT_ID || '';
