@@ -323,6 +323,17 @@ import CryptoJS from 'crypto-js';
     return this.refresh;
   }
 
+  async exchangeGmailCode(code: string): Promise<void> {
+    await this.request('/gmail/oauth', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  async importGmailEmails(): Promise<any> {
+    return this.request('/gmail/import', { method: 'POST' });
+  }
+
   isAuthenticated(): boolean {
     return !!this.token;
   }

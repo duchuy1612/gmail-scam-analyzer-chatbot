@@ -6,11 +6,13 @@ import { AppService } from './app.service';
 import { EmailController } from './controllers/email.controller';
 import { ChatController } from './controllers/chat.controller';
 import { AuthController } from './controllers/auth.controller';
+import { GmailController } from './controllers/gmail.controller';
 import { AiService } from './services/ai.service';
 import { AuthService } from './services/auth.service';
 import { UserService } from './services/user.service';
 import { EmailAnalysisService } from './services/email-analysis.service';
 import { ChatService } from './services/chat.service';
+import { GmailService } from './services/gmail.service';
 import { databaseConfig } from './config/database.config';
 import { User } from './entities/user.entity';
 import { EmailAnalysis } from './entities/email-analysis.entity';
@@ -30,15 +32,17 @@ import { RefreshToken } from './entities/refresh-token.entity';
     AppController,
     EmailController,
     ChatController,
-    AuthController
+    AuthController,
+    GmailController
   ],
   providers: [
-    AppService, 
-    AiService, 
-    AuthService, 
-    UserService, 
-    EmailAnalysisService, 
-    ChatService
+    AppService,
+    AiService,
+    AuthService,
+    UserService,
+    EmailAnalysisService,
+    ChatService,
+    GmailService
   ],
 })
 export class AppModule {}
