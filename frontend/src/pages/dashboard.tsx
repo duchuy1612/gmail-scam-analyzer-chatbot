@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient, HealthCheckResponse } from '../lib/api';
@@ -14,6 +15,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'chat' | 'analyzer' | 'health'>('chat');
   const { data: healthData, loading: healthLoading, execute: checkHealth } = useApi<HealthCheckResponse>();
+  const router = useRouter();
 
   useEffect(() => {
     if (activeTab === 'health') {
@@ -36,6 +38,14 @@ export default function Dashboard() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
             <p className="mt-2 text-gray-600">Analyze emails and chat with our AI assistant for email security guidance.</p>
+            <div className="mt-4">
+              <button
+                onClick={() => router.push('/connect-gmail')}
+                className="bg-red-600 text-white px-4 py-2 rounded-md text-sm"
+              >
+                Connect Gmail
+              </button>
+            </div>
           </div>
 
           {/* Tab Navigation */}
