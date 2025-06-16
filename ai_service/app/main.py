@@ -142,7 +142,19 @@ def analyze_email(email_data: EmailData):
         risk_level = determine_risk_level(scam_probability)
         explanation = generate_explanation(email_data, scam_probability)
         red_flags = identify_red_flags(email_data)
-        confidence = scam_probability
+risk_level = determine_risk_level(scam_probability)
+        explanation = generate_explanation(email_data, scam_probability)
+        red_flags = identify_red_flags(email_data)
+        
+        return EmailAnalysisResult(
+            scam_probability=scam_probability,
+            risk_level=risk_level,
+            explanation=explanation,
+            red_flags=red_flags,
+            confidence=scam_probability
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
         
         return EmailAnalysisResult(
             scam_probability=scam_probability,
