@@ -17,6 +17,59 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+
+@app.on_event("startup")
+async def load_classifier():
+    """Load the phishing detection model on startup."""
+# Import session management library
+import flask_login  # Flask-Login provides user session management for Flask
+
+async def load_classifier():
+    """Load the phishing detection model on startup."""
+    if flask_login.current_user.is_authenticated and flask_login.current_user.has_role('admin'):
+        model = load_model()
+    else:
+        raise PermissionError("Unauthorized access to load classifier")
+from datetime import datetime
+import logging  # Import logging module for error handling
+
+from .model_utils import load_model
+
+from .model_utils import load_model
+
+model = None  # TODO: Consider lazy loading or initialization in startup event
+
+app = FastAPI(
+    title="Gmail Scam Analyzer AI Service",
+
+app = FastAPI(
+    title="Gmail Scam Analyzer AI Service",
+    description="AI-powered email scam detection and chat assistant service",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+
+@app.on_event("startup")
+async def load_classifier():
+    """Load the phishing detection model on startup."""
+    global model
+    try:
+        model = load_model()
+    except Exception as e:
+        logging.error(f"Failed to load model: {str(e)}")
+        raise
+
+# Data Models
+class EmailData(BaseModel):
+    subject: str
+    body: str
+    sender: str
+    recipient: str
+    headers: Optional[List[str]] = []
+    urls: Optional[List[str]] = []
+
 # Data Models
 class EmailData(BaseModel):
     subject: str
@@ -77,8 +130,6 @@ def analyze_email(email_data: EmailData):
     """
     Analyze a single email for scam indicators using AI
     """
-    try:
-Analyze a single email for scam indicators using AI
     """
     try:
         email_content = f"{email_data.subject}
@@ -87,7 +138,7 @@ Analyze a single email for scam indicators using AI
         risk_level = determine_risk_level(scam_probability)
         explanation = generate_explanation(email_data, scam_probability)
         red_flags = identify_red_flags(email_data)
-"""
+    """
     try:
         text = f"{email_data.subject}
 {email_data.body}"
@@ -95,10 +146,20 @@ Analyze a single email for scam indicators using AI
         scam_probability = float(model.predict_proba([text])[0][1])
         risk_level = determine_risk_level(scam_probability)
         explanation = generate_explanation(email_data, scam_probability)
-        risk_level = determine_risk_level(scam_probability)
+        red_flags = identify_red_flags(email_data)
+risk_level = determine_risk_level(scam_probability)
         explanation = generate_explanation(email_data, scam_probability)
         red_flags = identify_red_flags(email_data)
-        confidence = scam_probability
+        
+        return EmailAnalysisResult(
+            scam_probability=scam_probability,
+            risk_level=risk_level,
+            explanation=explanation,
+            red_flags=red_flags,
+            confidence=scam_probability
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
         
         return EmailAnalysisResult(
             scam_probability=scam_probability,
@@ -119,15 +180,47 @@ def bulk_analyze_emails(request: BulkEmailRequest):
         texts = [f"{email.subject}\n{email.body}" for email in request.emails]
         probabilities = model.predict_proba(texts)[:, 1]
         results = []
-try:
+raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.post("/bulk-analyze-emails", response_model=List[EmailAnalysisResult])
+async def bulk_analyze_emails(request: BulkEmailRequest):
+    """
+    Analyze multiple emails for scam indicators
+    """
+    try:
         texts = [f"{email.subject}
 {email.body}" for email in request.emails]
-        probabilities = model.predict_proba(texts)[:, 1]
+        probabilities = await asyncio.to_thread(model.predict_proba, texts)
+        probabilities = probabilities[:, 1]
         
-        # TODO: Implement asynchronous processing or batching for improved performance
-        results = []
-        for email_data, prob in zip(request.emails, probabilities):
-            scam_probability = float(prob)
+        results = await asyncio.gather(*[
+            asyncio.to_thread(
+                process_email,
+                email_data,
+                float(prob)
+            ) for email_data, prob in zip(request.emails, probabilities)
+        ])
+        
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bulk analysis failed: {str(e)}")
+
+# Chat endpoint
+@app.post("/chat", response_model=ChatResponse)
+
+# TODO: Implement process_email function
+# def process_email(email_data: EmailData, scam_probability: float) -> EmailAnalysisResult:
+#     risk_level = determine_risk_level(scam_probability)
+#     explanation = generate_explanation(email_data, scam_probability)
+#     red_flags = identify_red_flags(email_data)
+#     confidence = scam_probability
+#     return EmailAnalysisResult(
+#         scam_probability=scam_probability,
+#         risk_level=risk_level,
+#         explanation=explanation,
+#         red_flags=red_flags,
+#         confidence=confidence
+#     )
             scam_probability = float(prob)
             risk_level = determine_risk_level(scam_probability)
             explanation = generate_explanation(email_data, scam_probability)

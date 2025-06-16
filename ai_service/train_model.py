@@ -10,9 +10,6 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 import joblib
-
-
-def main(args):
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -47,6 +44,7 @@ def main(args):
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
     try:
         joblib.dump(pipeline, output_path)
         print(f"Model saved to {output_path}")
