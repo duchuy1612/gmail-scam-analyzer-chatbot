@@ -29,7 +29,15 @@ export default function ConnectGmail() {
 
     if (typeof code === 'string') {
       const handleGmailCode = async () => {
-        try {
+try {
+          await apiClient.exchangeGmailCode(code);
+          await apiClient.importGmailEmails();
+        } catch (error) {
+          console.error('Error connecting to Gmail:', error);
+          // TODO: Implement error handling UI
+        } finally {
+          router.replace('/dashboard');
+        }
           await apiClient.exchangeGmailCode(code);
           await apiClient.importGmailEmails();
         } finally {
